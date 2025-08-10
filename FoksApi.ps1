@@ -1,6 +1,6 @@
 <#PSScriptInfo
 
-  .VERSION 0.0.1
+  .VERSION 0.0.2
   .GUID 576c206c-3aee-4212-9841-f3308824b7c6
   .AUTHOR Craig Dayton
   .COMPANYNAME 
@@ -145,9 +145,10 @@
     foks://foks.app/t:foks_apps/foksapi
 
   .NOTES
-    Version Date         Whom       Notes
-    ======= ====         ========   =====================================================
-    0.0.1   08/07/2025   cadayton   Initial Release
+    Version Date       Whom       Notes
+    ======= ====       ========   =====================================================
+    0.0.2   08-10-25   cadayton   Fixed typo in KeyPaths cmd and validates input too.
+    0.0.1   08-07-25   cadayton   Initial Release
  
 
     Copyright (c) 2024 by Craig Dayton
@@ -393,7 +394,7 @@ function Set-KeyValueEntry {
   }
 }
 
-[string]$myVersion = "0.0.1"
+[string]$myVersion = "0.0.2"
 [bool]$Script:ignoreError = $false
 
 $pathChar = [IO.Path]::DirectorySeparatorChar # deal with different OSes
@@ -414,7 +415,7 @@ if ($info) {
 
 switch ($action) {
   "KeyPaths" {
-    $r1 = Get-FoksKeyPaths $keypath
+    $r1 = Get-FoksKeyPaths $kvpath
 
     if ($r1 -match "Error:") {
       return $r1
@@ -424,6 +425,9 @@ switch ($action) {
         if (Test-Path $KeyPaths) {
           Remove-Item $KeyPaths
         }
+      }
+      if ($null -eq $r1) {
+        return "Error: Unexpected input returned from Get-FoksKeyPaths"
       }
       Get-KeyPaths $r1 $kvpath
       Remove-Item x3.log
