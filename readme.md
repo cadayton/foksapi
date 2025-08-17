@@ -51,7 +51,7 @@ on all OSes.
 
   If the value has embedded spaces or characters that need to be escaped, then the value should be in single quotation marks.
   ***
-## Updating the value of a key/value Entry
+## Updating key/value Entry
 
   ```
   PS> FoksApi Update /myfirst/love Traci   

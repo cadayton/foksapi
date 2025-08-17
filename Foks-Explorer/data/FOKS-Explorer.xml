@@ -1,0 +1,18 @@
+﻿<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<FoksExplorer>
+  <Debug>0</Debug>
+  <FoksLogin>
+    <kvpath>to be implemented later</kvpath>
+  </FoksLogin>
+  <PodeWebCfg>
+    <title>FOKS-Explorer</title>
+    <address>localhost</address>
+    <port>23007</port>
+    <protocol>http</protocol>
+    <authenticate>0</authenticate>
+    <duration>60</duration>
+    <logo>/pode.web/images/foks.jpg</logo>
+    <logo1>/pode.web/images/DeatonCoatOfArms-1.jpg</logo1>
+    <background>/pode.web/images/Bow-Lightening.png</background>
+  </PodeWebCfg>
+</FoksExplorer>
