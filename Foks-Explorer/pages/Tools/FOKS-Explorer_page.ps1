@@ -179,10 +179,10 @@ if (!($null -eq $r1)) {
 
 } else {
   Add-PodeWebPage -Name FOKS-Explorer -Icon 'table' -Group 'Tools' -Layouts @(
-    New-PodeWebHero -Title 'Welcome!' -Message 'This page supports the Foks-Explorer features in the PSFoks module' -Content @(
+    New-PodeWebHero -Title 'Welcome!' -Message 'Foks-Explorer is a web interface to key-value store of foks.pub' -Content @(
       New-PodeWebText -Value 'Click on the button for instructions on how to install the PSKeyBase module' -InParagraph -Alignment Center
       New-PodeWebParagraph -Alignment Center -Elements @(
-        New-PodeWebButton -Name 'FOKS-Explorer' -Icon Link -Url 'https://cadayton.keybase.pub/PSGallery/Modules/PSKeyBase/PSKeyBase.html' -NewTab
+        New-PodeWebButton -Name 'FOKS-Explorer' -Icon Link -Url 'https://cadayton.onrender.com/PodeWeb/Foks-Explorer.html' -NewTab
       )
     )
   )

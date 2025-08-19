@@ -4,6 +4,8 @@
 		$r1 = Invoke-Expression $fokscli 2> Start-FoksExplorer.log
 		if ($null -eq $r1) {
 			$r1 = Get-Content Start-FoksExplorer.log
+		}
+		if (Test-Path Start-FoksExplorer.log) {
 			Remove-Item Start-FoksExplorer.log
 		}
 		if ($r1 -match "Error:") {
@@ -28,8 +30,8 @@
 	Write-Host "Checking if FOKS is Locked " -ForegroundColor Yellow
 	if (Confirm-FoksNotLocked) {
 		Write-Host "Retrieving one-time password for Foks-Explorer" -ForegroundColor Yellow
-		Write-Host 'Executing: ' -NoNewline
-		Write-Host 'Get-FoksKeyValue' -ForegroundColor Yellow
+		# Write-Host 'Executing: ' -NoNewline
+		# Write-Host 'Get-FoksKeyValue' -ForegroundColor Yellow
 		$kvpath = "/apps/Foks-Explorer/" + $env:USERNAME + "/OTPW"
 		Get-FoksKeyValue $kvpath
 		try {
@@ -39,8 +41,8 @@
 		}
 		catch {
 			Write-Host "Starting Foks-Explorer Web Interface: " -NoNewline -ForegroundColor Green
-			Write-Host '/home/cadayton/git-keybase/Foks-Explorer/foks-explorer.ps1' -ForegroundColor Yellow
-			/home/cadayton/git-keybase/Foks-Explorer/foks-explorer.ps1
+			Write-Host 'foks-explorer.ps1' -ForegroundColor Yellow
+			foks-explorer.ps1
 		}
 	} else {
 		Write-Host "Error: unable to unlock FOKS" -ForegroundColor Yellow

@@ -25,11 +25,6 @@ Start-PodeServer -ScriptBlock {
     }
 
     function Get-PlatformType {
-      if (!(Test-Path variable:IsWindows)) {  # Windows PowerShell in use
-        $IsWindows = $true
-        $IsLinux   = $false
-        $IsMacOS   = $false
-      }
 
       if ($IsWindows) {$Platform = "Win"} elseif ($IsLinux) { $Platform = "Linux"} elseif ($IsMacOS) {Platform = "MacOS"}
 
@@ -93,7 +88,7 @@ Start-PodeServer -ScriptBlock {
   #
 
   # enable sessions and authentication
-    if ($cfgDB.authenticate -eq "1") {
+    if ($cfgDB.authenticate -ne "0") {
       [int]$myDuration = $cfgDB.duration
       $myDuration = $myDuration * 60
       Enable-PodeSessionMiddleware -Secret 'schwifty' -Duration $myDuration -Extend   # -Duration (10 * 60) = Ten minutes
@@ -109,50 +104,81 @@ Start-PodeServer -ScriptBlock {
     $myLogoFile1 = $cfgDB.logo1
     $myBackGroundFile = $cfgDB.background
   #
-  
-  if ($cfgDB.authenticate -eq "1") {
-    New-PodeAuthScheme -Form | Add-PodeAuth -Name Keybase -SuccessUseOrigin -ScriptBlock {
-      param($username, $password)
 
-      ($emsg,$smsg) = $password.Split(":")
-      keybase verify -m $smsg -S $username --no-output *> dummy.log
-      $r1 = Get-Content dummy.log
+  switch ($cfgDB.authenticate) {
+    "1" { # KeyBase
+      New-PodeAuthScheme -Form | Add-PodeAuth -Name Keybase -SuccessUseOrigin -ScriptBlock {
+        param($username, $userpw)
 
-      if ($r1 -match "Verification error:") {
-        return @{ Message = 'Invalid message signature' }
-      }
+        ($emsg,$smsg) = $userpw.Split(":")
+        keybase verify -m $smsg -S $username --no-output *> dummy.log
+        $r1 = Get-Content dummy.log
 
-      $p1 = keybase decrypt -m $emsg
-      ($eKey,$nsKey,$tmKey) = Get-KVKeyValue
-      # $pskObj = Get-PSKEntryValue -entryKey Pode9001 -team "cadayton,cadayton" -namespace Web
-      $pskObj = Get-PSKEntryValue -entryKey $eKey -team $tmKey -namespace $nsKey
-      $p2 = $pskObj.value
+        if ($r1 -match "Verification error:") {
+          return @{ Message = 'Invalid message signature' }
+        }
 
-      if ($p1 -ne $p2) {
-        return @{ Message = 'Invalid password entered' }
-      } else {
-        $newpw = Set-PSKPassPhrase -PWsize 40 -noprompt
-        $r1 = Set-PSKEntryValue -entryKey $eKey -entryValue $newpw -namespace $nsKey -team $tmKey
-      }
+        $p1 = keybase decrypt -m $emsg
+        ($eKey,$nsKey,$tmKey) = Get-KVKeyValue
+        # $pskObj = Get-PSKEntryValue -entryKey Pode9001 -team "cadayton,cadayton" -namespace Web
+        $pskObj = Get-PSKEntryValue -entryKey $eKey -team $tmKey -namespace $nsKey
+        $p2 = $pskObj.value
 
-      $j2 = keybase id -j $username
-      $j2 | Set-Content keybase.json
-      $r1 = Get-Content keybase.json | ConvertFrom-Json
-      $sigID = $r1.identifyKey.sigID
+        if ($p1 -ne $p2) {
+          return @{ Message = 'Invalid password entered' }
+        } else {
+          $newpw = Set-PSKPassPhrase -PWsize 40 -noprompt
+          $r1 = Set-PSKEntryValue -entryKey $eKey -entryValue $newpw -namespace $nsKey -team $tmKey
+        }
 
-      $cfgDB = Import-webConfig "PodeWebCfg"
-      $myAvatarFile =  $cfgDB.logo
+        $j2 = keybase id -j $username
+        $j2 | Set-Content keybase.json
+        $r1 = Get-Content keybase.json | ConvertFrom-Json
+        $sigID = $r1.identifyKey.sigID
 
-      # password msg is signed by $username
-      return @{
-        User = @{
-          ID = $sigID
-          Name = $username
-          Type = 'Human'
-          Groups = @('Developer')
-          AvatarUrl = $myAvatarFile
+        $cfgDB = Import-webConfig "PodeWebCfg"
+        $myAvatarFile =  $cfgDB.logo
+
+        # password msg is signed by $username
+        return @{
+          User = @{
+            ID = $sigID
+            Name = $username
+            Type = 'Human'
+            Groups = @('Developer')
+            AvatarUrl = $myAvatarFile
+          }
         }
       }
+    }
+    "2" { # FOKS
+       New-PodeAuthScheme -Form | Add-PodeAuth -Name Foks -SuccessUseOrigin -ScriptBlock {
+        param($username, $userpw)
+
+        $kvpath = "/apps/Foks-Explorer/" + $username + "/OTPW"
+		    $rslt = Get-FoksKeyValue $kvpath -noprompt
+
+        if ($rslt -eq $userpw) {
+          $r1 = Edit-FoksKeyValue $kvpath SetRandomValue
+          return @{
+            User = @{
+              ID = $r1
+              Name = $username
+              Type = 'Human'
+              Groups = @('Developer')
+              AvatarUrl = $myAvatarFile
+            }
+          }
+        } else {
+          return @{ Message = 'Invalid account or password entered' }
+        }
+       }
+    }
+    "3" { # HashiCorp Vault
+      
+    }
+    Default { # None
+
     }
   }
 
@@ -160,9 +186,21 @@ Start-PodeServer -ScriptBlock {
 
     Use-PodeWebTemplates -Title $cfgDB.title -Logo $myLogoFile -Theme Dark
 
-    if ($cfgDB.authenticate -eq "1") {
-      Set-PodeWebLoginPage -Authentication Keybase -Logo $myLogoFile1 -BackgroundImage $myBackGroundFile
+    switch ($cfgDB.authenticate) {
+      "1" {
+        Set-PodeWebLoginPage -Authentication Keybase -Logo $myLogoFile1 -BackgroundImage $myBackGroundFile
+      }
+      "2" {
+        Set-PodeWebLoginPage -Authentication FOKS -Logo $myLogoFile1 -BackgroundImage $myBackGroundFile
+      }
+      "3" {
+        Set-PodeWebLoginPage -Authentication Vault -Logo $myLogoFile1 -BackgroundImage $myBackGroundFile
+      }
+      Default {
+
+      }
     }
+
   #
 
   $div1 = New-PodeWebNavDivider
@@ -208,7 +246,9 @@ Start-PodeServer -ScriptBlock {
     $myTitle = hostname
   }
 
-  $myTitle = "Demo of FOKS-Explorer on " + $myTitle
+  $myVersion = "0.0.2"
+
+  $myTitle = "Demo of FOKS-Explorer on " + $myTitle + " ($myVersion)"
 
   Set-PodeWebHomePage -Title $myTitle -NoAuth -Layouts $WinHome -PassThru |
   Register-PodeWebPageEvent -Type Load -NoAuth -ScriptBlock {

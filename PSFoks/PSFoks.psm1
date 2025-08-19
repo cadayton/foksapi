@@ -215,7 +215,9 @@
           HelpMessage = "Enter Key/value path",
           ValueFromPipeline)]
           [ValidateNotNullorEmpty()]
-        [string]$kvpath
+        [string]$kvpath,
+        [Parameter(Position=1)]
+          [switch]$noprompt
       )
 
     #
@@ -226,8 +228,12 @@
       if (Test-Path foksmod.log) {
         Remove-Item foksmod.log
       }
-      Set-Clipboard -Value $r1
-      return $null
+      if ($noprompt) {
+        return $r1
+      } else {
+        Set-Clipboard -Value $r1
+        return $null
+      }
     } else { # error happened
       if (Test-Path foksmod.log) {
         $r1 = Get-Content foksmod.log
