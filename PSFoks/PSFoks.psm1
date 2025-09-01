@@ -422,16 +422,27 @@
           HelpMessage = "Enter KeyValue path",
           ValueFromPipeline)]
           [ValidateNotNullorEmpty()]
-        [string]$kvpath
+        [string]$kvpath,
+        [Parameter(Position=1,
+          Mandatory=$false,
+          HelpMessage = "Recursive",
+          ValueFromPipeline)]
+        [switch]$recursive
       )
 
     #
 
-    if (!(Test-FoksKeyValue $kvpath)) {
-      return "Error: $kvpath not found"
+    if (!($recursive)) {
+      if (!(Test-FoksKeyValue $kvpath)) {
+        return "Error: $kvpath not found"
+      }
     }
 
     $fokscli = "foks kv rm " + " $kvpath"
+
+    if ($recursive) {
+      $fokscli += " -R"
+    }
 
     $r1 = Invoke-Expression $fokscli 2> foksmod.log
 
